@@ -127,6 +127,23 @@ public class WS extends WebSocketServlet {
                     if (key.startsWith("ScoreBoard.FrontendSettings.")) {
                         sbm.getFrontendSettingsModel().set(key.substring(28), v);
                     }
+                } else if (action.equals("AddRuleset")) {
+                    String n = json.getString("name");
+                    String p = json.getString("parent");
+                    sbm.getRulesetsModel().addRuleset(n, p);
+                } else if (action.equals("RemoveRuleset")) {
+                    String i = json.getString("id");
+                    sbm.getRulesetsModel().removeRuleset(i);
+                } else if (action.equals("UpdateRuleset")) {
+                    String i = json.getString("id");
+                    String n = json.getString("name");
+                    JSONObject rules = json.getJSONObject("rules");
+                    Map<String, String> s = new HashMap<String, String>();
+                    for (String k : rules.keySet()) {
+                      s.put(k, rules.getString(k));
+                    }
+                    sbm.getRulesetsModel().getRulesetModel(i).setAll(s);
+                    sbm.getRulesetsModel().getRulesetModel(i).setName(n);
                 } else if (action.equals("Ping")) {
                     send(new JSONObject().put("Pong", ""));
                 } else {

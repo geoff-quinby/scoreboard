@@ -4,12 +4,12 @@ import com.carolinarollergirls.scoreboard.utils.ClockConversion;
 
 public class TimeRule extends Rule {
     public TimeRule(String fullname, String description, String defaultValue) {
-        super("Time", fullname, description, null);
+        super("Time", fullname, description, "");
         this.defaultValue = convertValue(defaultValue);
     }
 
-    public Object convertValue(String v) {
-        return ClockConversion.fromHumanReadable(v);
+    public String convertValue(String v) {
+        return ClockConversion.fromHumanReadable(v).toString();
     }
 
     public String toHumanReadable(Object v) {

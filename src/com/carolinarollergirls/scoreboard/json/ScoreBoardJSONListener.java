@@ -10,6 +10,7 @@ package com.carolinarollergirls.scoreboard.json;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.carolinarollergirls.scoreboard.ScoreBoardManager;
 import com.carolinarollergirls.scoreboard.event.ScoreBoardEvent;
@@ -18,9 +19,11 @@ import com.carolinarollergirls.scoreboard.event.ScoreBoardListener;
 import com.carolinarollergirls.scoreboard.penalties.PenaltyCode;
 import com.carolinarollergirls.scoreboard.penalties.PenaltyCodesDefinition;
 import com.carolinarollergirls.scoreboard.penalties.PenaltyCodesManager;
+import com.carolinarollergirls.scoreboard.rules.Rule;
 import com.carolinarollergirls.scoreboard.view.Clock;
 import com.carolinarollergirls.scoreboard.view.FrontendSettings;
 import com.carolinarollergirls.scoreboard.view.Position;
+import com.carolinarollergirls.scoreboard.view.Rulesets;
 import com.carolinarollergirls.scoreboard.view.ScoreBoard;
 import com.carolinarollergirls.scoreboard.view.Settings;
 import com.carolinarollergirls.scoreboard.view.Skater;
@@ -109,6 +112,14 @@ public class ScoreBoardJSONListener implements ScoreBoardListener {
                     } else {
                         update(prefix, "Setting(" + prop + ")", v);
                     }
+                } else if (p instanceof Rulesets) {
+                    if (prop.equals(Rulesets.EVENT_CURRENT_RULESET)) {
+                        processCurrentRuleset("ScoreBoard", (Rulesets)p);
+                    } else {
+                        processRuleset("ScoreBoard", (Rulesets.Ruleset)v, true);
+                    }
+                } else if (p instanceof Rulesets.Ruleset) {
+                    processRuleset("ScoreBoard", (Rulesets.Ruleset)p, false);
                 } else if (p instanceof Team.AlternateName) {
                     Team.AlternateName an = (Team.AlternateName)p;
                     update("ScoreBoard.Team(" + an.getTeam().getId() + ")", "AlternateName(" + an.getId() + ")", v);
@@ -283,6 +294,29 @@ public class ScoreBoardJSONListener implements ScoreBoardListener {
         }
     }
 
+    private void processCurrentRuleset(String path, Rulesets r) {
+        for (Map.Entry<String,String> e : r.getAll().entrySet()) {
+            updates.add(new WSUpdate(path + "." + Rulesets.EVENT_CURRENT_RULES + "(" + e.getKey() + ")", e.getValue()));
+        }
+        updates.add(new WSUpdate(path + "." + Rulesets.EVENT_CURRENT_RULESET + ".Id", r.getCurrentRuleset().getId()));
+        updates.add(new WSUpdate(path + "." + Rulesets.EVENT_CURRENT_RULESET + ".Name", r.getCurrentRuleset().getName()));
+    }
+
+    private void processRuleset(String path, Rulesets.Ruleset r, boolean remove) {
+        path = path + "." + Rulesets.EVENT_RULESET + "(" + r.getId() + ")";
+        updates.add(new WSUpdate(path, null));
+        if (remove) {
+            return;
+        }
+        
+        for (Map.Entry<String,String> e : r.getAll().entrySet()) {
+            updates.add(new WSUpdate(path + ".Rule(" + e.getKey() + ")", e.getValue()));
+        }
+        updates.add(new WSUpdate(path + ".Id", r.getId()));
+        updates.add(new WSUpdate(path + ".Name", r.getName()));
+        updates.add(new WSUpdate(path + ".ParentId", r.getParentRulesetId()));
+    }
+
     private void processAlternateName(String path, Team.AlternateName an, boolean remove) {
         path = path + ".AlternateName(" + an.getId() + ")";
         if (remove) {
@@ -358,7 +392,17 @@ public class ScoreBoardJSONListener implements ScoreBoardListener {
         updates.add(new WSUpdate("ScoreBoard." + ScoreBoard.EVENT_TIMEOUT_OWNER, sb.getTimeoutOwner()));
         updates.add(new WSUpdate("ScoreBoard." + ScoreBoard.EVENT_OFFICIAL_REVIEW, sb.isOfficialReview()));
 
-
+        // Process Rules.
+        for (Rule r : sb.getRulesets().getRules().values()) {
+            String prefix = "ScoreBoard." + Rulesets.EVENT_RULE_DEFINITIONS + "(" + r.getFullName() + ")";
+            updates.add(new WSUpdate(prefix + ".Name", r.getFullName()));
+            updates.add(new WSUpdate(prefix + ".Description", r.getDescription()));
+            updates.add(new WSUpdate(prefix + ".Type", r.getType()));
+        }
+        processCurrentRuleset("ScoreBoard", sb.getRulesets());
+        for (Rulesets.Ruleset r : sb.getRulesets().getRulesets().values()) {
+          processRuleset("ScoreBoard", r, false);
+        }
 
         // Process Settings
         processSettings("ScoreBoard", sb.getSettings());

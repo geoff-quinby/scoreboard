@@ -7,7 +7,7 @@ public class Rule {
     public Rule(String type, String fullname, String description, Object defaultValue) {
         this.type = type;
         this.fullname = fullname;
-        this.defaultValue = defaultValue;
+        this.defaultValue = defaultValue.toString();
         this.description = description;
 
         name = "";
@@ -30,7 +30,7 @@ public class Rule {
     public String getGroup() { return group; }
     public String getSubgroup() { return subgroup; }
     public String getFullName() { return fullname; }
-    public Object getDefaultValue() { return defaultValue; }
+    public String getDefaultValue() { return defaultValue; }
     public String getDescription() { return description; }
 
     public Object convertValue(String v) {
@@ -61,6 +61,6 @@ public class Rule {
     protected String subgroup;
     protected String name;
     protected String fullname;
-    protected Object defaultValue;
+    protected String defaultValue;
     protected String description;
 }
